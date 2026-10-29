@@ -4,7 +4,7 @@ Windows 桌面悬浮日语单词卡片。免安装、解压即用，适合在工
 
 ## 下载与使用
 
-前往 [Releases](https://github.com/ziyie421-max/kotoba-window/releases/latest) 下载 **KotobaWindow-v1.1-Windows-x64.zip**，完整解压后运行 `小词窗/KotobaWindow.exe`。请保留同目录的 `voice` 文件夹。GitHub 的 Source code 下载仅含源码，不含语音模型。
+前往 [Releases](https://github.com/ziyie421-max/kotoba-window/releases/latest) 下载 **KotobaWindow-v1.1.1-Windows-x64.zip**，完整解压后运行 `小词窗/KotobaWindow.exe`。请保留同目录的 `voice` 文件夹。GitHub 的 Source code 下载仅含源码，不含语音模型。
 
 运行环境：Windows 10/11 x64、.NET Framework 4.8。离线语音模型已包含在完整版中；无需联网、账号或 API Key。
 
@@ -14,7 +14,7 @@ Windows 桌面悬浮日语单词卡片。免安装、解压即用，适合在工
 - N5–N1 多选混学，共享每日新词额度；可选乱序，新词与到期复习分开调度。
 - 间隔复习、收藏、撤销上一条评分和本地学习记录。
 - Supertonic3 离线神经语音、自动发音与 R 键重播；可手动选择 Windows 日语语音。
-- 窗口置顶、紧凑模式、明暗主题、可调背景透明度；文字保持清晰。
+- 窗口置顶、紧凑模式、明暗主题、可调背景透明度；文字保持清晰；透明模式下按钮与边框淡显，悬停或键盘聚焦时显现。
 
 | 快捷键 | 操作 |
 | --- | --- |
@@ -22,8 +22,8 @@ Windows 桌面悬浮日语单词卡片。免安装、解压即用，适合在工
 | 1–4 | 评分 |
 | R | 重播发音 |
 | F | 收藏 |
-| Ctrl+Z | 撤销上次评分 |
-| Ctrl+Alt+J | 显示／隐藏窗口 |
+| Alt+E | 撤销上次评分 |
+| Alt+R | 显示／隐藏窗口 |
 
 详见 [使用说明](docs/使用说明.md)。
 

@@ -48,7 +48,7 @@ namespace Kotoba {
   string ColorFor(string hex) { if(!dark)return hex; switch(hex.ToUpperInvariant()){case "#24354B":return "#EDF2FF";case "#78859A":return "#AAB8D0";case "#6356D9":return "#8D7CF4";case "#F5F7FC":return "#151D30";case "#E6EAF2":case "#DDE3EE":return "#3B4962";case "#EFF2F8":return "#2A3750";case "#F4F3FE":return "#333451";case "#FAEEEE":return "#4A303D";case "#FCF4E5":return "#4C402D";case "#EAF4F1":return "#24443F";case "#EEEAFB":return "#383151";case "#FFFFFF":return "#202C43";default:return hex;} }
   Brush B(string hex) { return (Brush)new BrushConverter().ConvertFromString(ColorFor(hex)); }
   Brush PanelBrush(string hex,double factor=1) {var c=((SolidColorBrush)B(hex)).Color;if(store!=null&&store.Data.Settings.Transparent)c.A=(byte)Math.Round(255*store.Data.Settings.BackgroundOpacity*factor);return new SolidColorBrush(c);}
-  void ApplyAppearance() {dark=store.Data.Settings.Theme=="Dark";ink=B("#24354B");muted=B("#78859A");purple=B("#6356D9");pale=B("#F5F7FC");line=B("#E6EAF2");Foreground=ink;Background=Brushes.Transparent;LoadStyles();if(frame!=null)frame.Background=PanelBrush("#F5F7FC",.45);}
+  void ApplyAppearance() {dark=store.Data.Settings.Theme=="Dark";ink=B("#24354B");muted=B("#78859A");purple=B("#6356D9");pale=B("#F5F7FC");line=PanelBrush("#E6EAF2",.2);Foreground=ink;Background=Brushes.Transparent;LoadStyles();if(frame!=null)frame.Background=PanelBrush("#F5F7FC",.45);}
   void RebuildView(){ApplyAppearance();BuildShell();if(view=="study")RenderStudy();else if(view=="library")RenderLibrary();else RenderSettings();}
   Button LevelPicker(int[] selected,Action<int[]> apply,double width) {
    var levels=selected??new[]{5,4,3,2,1};var b=Btn(levels.Length==5?"全部等级 ▾":String.Join("+",levels.OrderByDescending(x=>x).Select(x=>"N"+x))+" ▾",delegate{});b.Width=width;b.FontSize=11;b.Padding=new Thickness(7,7,7,7);b.Margin=new Thickness(0);
@@ -78,7 +78,7 @@ namespace Kotoba {
    if(store.Data.Settings.Compact){Width=365;Height=540;}
    try {speech=new SpeechSynthesizer();var v=speech.GetInstalledVoices().FirstOrDefault(x=>x.Enabled && x.VoiceInfo.Culture.TwoLetterISOLanguageName=="ja"); if(v!=null){voice=v.VoiceInfo.Name;speech.SelectVoice(voice);} } catch {voice=null;}
    BuildShell(); SelectNext();
-   SourceInitialized+=delegate {source=HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);source.AddHook(Hook);if(!RegisterHotKey(source.Handle,1,0x4003,0x4A))Toast("全局快捷键被占用，可通过托盘打开。");};
+   SourceInitialized+=delegate {source=HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);source.AddHook(Hook);if(!RegisterHotKey(source.Handle,1,0x4001,0x52))Toast("全局快捷键被占用，可通过托盘打开。");};
    Loaded+=delegate {CreateTray();AutoRead();};
    IsVisibleChanged+=delegate {if(!IsVisible)StopSpeech();};
    Closing+=delegate {closed=true;StopSpeech();Save();if(source!=null)UnregisterHotKey(source.Handle,1);if(tray!=null)tray.Dispose();if(speech!=null)speech.Dispose();if(neural!=null)neural.Dispose();if(prefetch!=null)prefetch.Dispose();};
@@ -98,19 +98,20 @@ namespace Kotoba {
    x=x.Replace("<Style TargetType='CheckBox'>","<Style TargetType='CheckBox'><Setter Property='Foreground' Value='"+ColorFor("#24354B")+"'/>");
    x=x.Replace("<Style TargetType='TextBox'>","<Style TargetType='TextBox'><Setter Property='Foreground' Value='"+ColorFor("#24354B")+"'/><Setter Property='CaretBrush' Value='"+ColorFor("#24354B")+"'/>");
    x=x.Replace("<Style TargetType='ListBoxItem'>","<Style TargetType='ListBoxItem'><Setter Property='Foreground' Value='"+ColorFor("#24354B")+"'/>");
+   if(store.Data.Settings.Transparent){int start=x.IndexOf("<ControlTemplate TargetType='Button'>");int end=x.IndexOf("</ControlTemplate>",start)+"</ControlTemplate>".Length;x=x.Substring(0,start)+@"<ControlTemplate TargetType='Button'><Grid Background='Transparent'><Border x:Name='bd' CornerRadius='10' Background='{TemplateBinding Background}' Opacity='.10'/><ContentPresenter x:Name='label' Margin='{TemplateBinding Padding}' HorizontalAlignment='Center' VerticalAlignment='Center' Opacity='.55'/></Grid><ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='bd' Property='Opacity' Value='.65'/><Setter TargetName='label' Property='Opacity' Value='1'/></Trigger><Trigger Property='IsKeyboardFocused' Value='True'><Setter TargetName='bd' Property='Opacity' Value='.65'/><Setter TargetName='label' Property='Opacity' Value='1'/></Trigger><Trigger Property='IsPressed' Value='True'><Setter TargetName='bd' Property='Opacity' Value='.85'/></Trigger><Trigger Property='IsEnabled' Value='False'><Setter TargetName='bd' Property='Opacity' Value='.025'/><Setter TargetName='label' Property='Opacity' Value='.22'/></Trigger></ControlTemplate.Triggers></ControlTemplate>"+x.Substring(end);}
    Resources=(ResourceDictionary)XamlReader.Parse(x);
    Resources[SystemColors.WindowBrushKey]=B("#FFFFFF");Resources[SystemColors.WindowTextBrushKey]=ink;Resources[SystemColors.ControlBrushKey]=B("#EFF2F8");Resources[SystemColors.ControlTextBrushKey]=ink;
    Resources[SystemColors.HighlightBrushKey]=purple;Resources[SystemColors.HighlightTextBrushKey]=Brushes.White;
   }
   TextBlock T(string s,double size=13,Brush color=null) {return new TextBlock {Text=s,FontSize=size,Foreground=color??ink,TextWrapping=TextWrapping.Wrap};}
-  Button Btn(string s,Action click,bool primary=false) {var b=new Button {Content=s,Margin=new Thickness(3),Background=primary?purple:PanelBrush("#EFF2F8"),Foreground=primary?Brushes.White:ink};b.Click+=delegate {click();};return b;}
+  Button Btn(string s,Action click,bool primary=false) {var b=new Button {Content=s,Margin=new Thickness(3),Background=primary?purple:PanelBrush("#EFF2F8"),Foreground=primary&&!store.Data.Settings.Transparent?Brushes.White:ink};b.Click+=delegate {click();};return b;}
   void Row(Grid grid,UIElement e,int r) {Grid.SetRow(e,r);grid.Children.Add(e);}
   void BuildShell() {
    shell=new Grid {Margin=new Thickness(18,12,18,10)};
    shell.RowDefinitions.Add(new RowDefinition {Height=GridLength.Auto});shell.RowDefinitions.Add(new RowDefinition {Height=GridLength.Auto});shell.RowDefinitions.Add(new RowDefinition());shell.RowDefinitions.Add(new RowDefinition {Height=GridLength.Auto});
    var top=new Grid {Margin=new Thickness(2,0,0,12)};top.ColumnDefinitions.Add(new ColumnDefinition());top.ColumnDefinitions.Add(new ColumnDefinition {Width=GridLength.Auto});
    var brand=new StackPanel {Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center};
-   var logo=new Border {Background=purple,CornerRadius=new CornerRadius(9),Width=33,Height=33,Child=new TextBlock {Text="あ",Foreground=Brushes.White,FontFamily=new FontFamily("Yu Gothic"),FontSize=23,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center}};brand.Children.Add(logo);
+   var logo=new Border {Background=store.Data.Settings.Transparent?PanelBrush("#6356D9",.25):purple,CornerRadius=new CornerRadius(9),Width=33,Height=33,Child=new TextBlock {Text="あ",Foreground=Brushes.White,FontFamily=new FontFamily("Yu Gothic"),FontSize=23,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center}};brand.Children.Add(logo);
    brand.Children.Add(new TextBlock {Text="小词窗",FontSize=17,FontWeight=FontWeights.SemiBold,Margin=new Thickness(9,0,0,0),VerticalAlignment=VerticalAlignment.Center});
    top.Children.Add(brand);
    brand.MouseLeftButtonDown+=delegate(object s,MouseButtonEventArgs e){if(e.ClickCount==2)ToggleCompact();else DragMove();};
@@ -118,7 +119,7 @@ namespace Kotoba {
    var controls=new StackPanel {Orientation=Orientation.Horizontal};Grid.SetColumn(controls,1);top.Children.Add(controls);
    pin=Btn(Topmost?"钉住":"置顶",delegate {Topmost=!Topmost;store.Data.Settings.Topmost=Topmost;pin.Content=Topmost?"钉住":"置顶";Save();});pin.FontSize=11;pin.Padding=new Thickness(8,7,8,7);pin.ToolTip="始终显示在其他窗口上方";controls.Children.Add(pin);
    compact=Btn(store.Data.Settings.Compact?"展开":"小窗",ToggleCompact);compact.FontSize=11;compact.Padding=new Thickness(8,7,8,7);controls.Children.Add(compact);
-   var hide=Btn("—",delegate {StopSpeech();Hide();});hide.Padding=new Thickness(8,7,8,7);hide.ToolTip="收起到托盘 · Ctrl+Alt+J 唤出";controls.Children.Add(hide);
+   var hide=Btn("—",delegate {StopSpeech();Hide();});hide.Padding=new Thickness(8,7,8,7);hide.ToolTip="收起到托盘 · Alt+R 唤出";controls.Children.Add(hide);
    var close=Btn("×",delegate {Close();});close.Padding=new Thickness(8,7,8,7);close.ToolTip="保存并退出";controls.Children.Add(close);
    Row(shell,top,0);
    var nav=new UniformGrid {Columns=3,Margin=new Thickness(0,0,0,10)};
@@ -158,8 +159,8 @@ namespace Kotoba {
    var bottom=new StackPanel();ratings=new UniformGrid {Columns=4,Margin=new Thickness(-3,0,-3,0)};
    var labels=new[]{"忘记","困难","记得","轻松"};
    for(int i=1;i<=4;i++){var rating=i;var bp=new StackPanel();bp.Children.Add(new TextBlock {Text=i+"  "+labels[i-1],HorizontalAlignment=HorizontalAlignment.Center,FontWeight=FontWeights.SemiBold});bp.Children.Add(new TextBlock {Text=Scheduler.Preview(P(current),i),HorizontalAlignment=HorizontalAlignment.Center,FontSize=10,Margin=new Thickness(0,4,0,0)});var button=Btn("",delegate {Grade(rating);});button.Content=bp;button.Padding=new Thickness(3,10,3,10);button.IsEnabled=current!=null&&revealed&&!practice;button.Background=B(i==1?"#FAEEEE":i==2?"#FCF4E5":i==3?"#EAF4F1":"#EEEAFB");ratings.Children.Add(button);}
-   bottom.Children.Add(ratings);var undoButton=Btn("↶ 撤销上一次评分",Undo);undoButton.IsEnabled=undo!=null;undoButton.FontSize=10;undoButton.Background=Brushes.Transparent;undoButton.Padding=new Thickness(5,5,5,5);bottom.Children.Add(undoButton);Row(g,bottom,3);
-   if(String.IsNullOrWhiteSpace(notice))status.Text="Space 翻面 · 1–4 评分 · Ctrl+Alt+J 唤出";
+   bottom.Children.Add(ratings);var undoButton=Btn("↶ 撤销上一次评分  Alt+E",Undo);undoButton.IsEnabled=undo!=null;undoButton.FontSize=10;undoButton.Background=Brushes.Transparent;undoButton.Padding=new Thickness(5,5,5,5);bottom.Children.Add(undoButton);Row(g,bottom,3);
+   if(String.IsNullOrWhiteSpace(notice))status.Text="Space 翻面 · 1–4 评分 · Alt+R 唤出";
   }
   string EmptyText() {
    var selected=words.Where(w=>Scheduler.IncludesLevel(store.Data.Settings,w.Level)).ToList();
@@ -226,30 +227,30 @@ namespace Kotoba {
    p.Children.Add(Section("外观与悬浮"));var themes=new UniformGrid {Columns=2};themes.Children.Add(Btn("亮色",delegate {store.Data.Settings.Theme="Light";Save();RebuildView();},!dark));themes.Children.Add(Btn("暗色",delegate {store.Data.Settings.Theme="Dark";Save();RebuildView();},dark));p.Children.Add(themes);
    var transparent=new CheckBox {Content="透明背景（文字保持清晰）",IsChecked=store.Data.Settings.Transparent};transparent.Click+=delegate {store.Data.Settings.Transparent=transparent.IsChecked==true;Save();RebuildView();};p.Children.Add(transparent);
    var alphaLabel=T("背景浓度 "+Math.Round(store.Data.Settings.BackgroundOpacity*100)+"%",11,muted);p.Children.Add(alphaLabel);
-   var alpha=new Slider {Minimum=.2,Maximum=1,Value=store.Data.Settings.BackgroundOpacity,TickFrequency=.05,IsSnapToTickEnabled=true,Margin=new Thickness(0,8,0,6)};alpha.ValueChanged+=delegate {store.Data.Settings.BackgroundOpacity=alpha.Value;alphaLabel.Text="背景浓度 "+Math.Round(alpha.Value*100)+"%";if(frame!=null)frame.Background=PanelBrush("#F5F7FC",.45);};alpha.PreviewMouseLeftButtonUp+=delegate {Save();};alpha.LostKeyboardFocus+=delegate {Save();};p.Children.Add(alpha);p.Children.Add(T("勾选置顶后，可叠在其他应用上。拖动标题移动位置。",11,muted));
+   var alpha=new Slider {Minimum=.2,Maximum=1,Value=store.Data.Settings.BackgroundOpacity,TickFrequency=.05,IsSnapToTickEnabled=true,Margin=new Thickness(0,8,0,6)};alpha.ValueChanged+=delegate {store.Data.Settings.BackgroundOpacity=alpha.Value;alphaLabel.Text="背景浓度 "+Math.Round(alpha.Value*100)+"%";if(frame!=null)frame.Background=PanelBrush("#F5F7FC",.45);};alpha.PreviewMouseLeftButtonUp+=delegate {Save();};alpha.LostKeyboardFocus+=delegate {Save();};p.Children.Add(alpha);p.Children.Add(T("勾选置顶后，可叠在其他应用上。透明模式下按钮淡显，悬停或键盘聚焦时显现。Alt+R 显示／隐藏窗口。",11,muted));
    var auto=new CheckBox {Content="新卡出现时自动发音（R 仍可重播）",IsChecked=store.Data.Settings.AutoSpeak};auto.Click+=delegate {store.Data.Settings.AutoSpeak=auto.IsChecked==true;if(!store.Data.Settings.AutoSpeak)StopSpeech();Save();};p.Children.Add(auto);
    p.Children.Add(Section("发音"));var voices=new UniformGrid {Columns=2};voices.Children.Add(Btn("自然语音 · 离线",delegate {StopSpeech();store.Data.Settings.VoiceBackend="Neural";Save();RenderSettings();},store.Data.Settings.VoiceBackend=="Neural"));voices.Children.Add(Btn("Windows 备用",delegate {StopSpeech();store.Data.Settings.VoiceBackend="Windows";Save();RenderSettings();},store.Data.Settings.VoiceBackend=="Windows"));p.Children.Add(voices);
    p.Children.Add(T(store.Data.Settings.VoiceBackend=="Neural"?(neural.IsAvailable?"Supertonic 3 日语神经语音 · 已就绪":"语音文件缺失，请完整解压 voice 文件夹"):(voice==null?"未检测到 Windows 日语语音":"Windows 语音："+voice),12));
    p.Children.Add(T("自然语音已包含在安装包内，无需联网或语言包。首次遇到一个词需生成几秒，之后直接播放缓存。按词条假名朗读，AI 语音仍可能出现读音或声调偏差。",11,muted));
    p.Children.Add(Section("进度与备份"));var backup=new UniformGrid {Columns=2};backup.Children.Add(Btn("导出进度",Export));backup.Children.Add(Btn("导入进度",Import));p.Children.Add(backup);p.Children.Add(T("每次评分自动保存；覆盖前保留上一份备份。导入将替换当前进度。",11,muted));
    var path=T(store.FilePath,10,muted);path.Margin=new Thickness(0,7,0,0);p.Children.Add(path);
-   p.Children.Add(Section("快捷键"));p.Children.Add(T("Space  显示答案       1–4  评分\nR  听发音       F  收藏\nCtrl+Z  撤销评分\nCtrl+Alt+J  全局显示 / 隐藏\n拖动顶部标题移动窗口；拖动边缘调整大小。",12));
+   p.Children.Add(Section("快捷键"));p.Children.Add(T("Space  显示答案       1–4  评分\nR  听发音       F  收藏\nAlt+E  撤销评分\nAlt+R  全局显示 / 隐藏\n拖动顶部标题移动窗口；拖动边缘调整大小。",12));
    p.Children.Add(Section("词库与来源"));p.Children.Add(T(String.Join("  ·  ",Enumerable.Range(1,5).Reverse().Select(l=>"N"+l+" "+words.Count(w=>w.Level==l)))+"\n合计 "+words.Count+" 个词条",12));p.Children.Add(T("采用社区整理的 N5–N1 分级与中文释义，不是 JLPT 官方完整考试词表。词义可能需要结合语境核对。具体来源、署名和许可见程序文件夹中的“词库来源与许可.md”。词库 © egg rolls，CC BY-NC 4.0，仅限非商业使用。",11,muted));
-   p.Children.Add(Section("小词窗 1.1"));p.Children.Add(T("本地优先 · 无账号 · 无广告\n采用简单间隔复习算法，参考 Anki / jpdb / Mochi 的学习操作设计；并非 FSRS。\n关闭窗口会保存并退出；“—”收起到托盘。",11,muted));
+   p.Children.Add(Section("小词窗 1.1.1"));p.Children.Add(T("本地优先 · 无账号 · 无广告\n采用简单间隔复习算法，参考 Anki / jpdb / Mochi 的学习操作设计；并非 FSRS。\n关闭窗口会保存并退出；“—”收起到托盘。",11,muted));
   }
   TextBlock Section(string s){var t=T(s,15);t.FontWeight=FontWeights.SemiBold;t.Margin=new Thickness(0,22,0,9);return t;}
   void Export() {var d=new SaveFileDialog {Filter="学习进度 JSON|*.json",FileName="小词窗进度-"+DateTime.Now.ToString("yyyyMMdd")+".json"};if(d.ShowDialog(this)!=true)return;try {store.Export(d.FileName);Toast("进度已导出");}catch(Exception ex){Toast("导出失败："+ex.Message);}}
   void Import() {var d=new OpenFileDialog {Filter="学习进度 JSON|*.json"};if(d.ShowDialog(this)!=true)return;if(MessageBox.Show(this,"导入会替换当前学习进度。建议先导出一份备份。是否继续？","导入进度",MessageBoxButton.YesNo,MessageBoxImage.Question)!=MessageBoxResult.Yes)return;try {store.Import(d.FileName);undo=null;current=null;ApplyAppearance();Topmost=store.Data.Settings.Topmost;Width=store.Data.Settings.Compact?365:452;Height=store.Data.Settings.Compact?540:700;Toast("进度已导入");view="study";BuildShell();SelectNext();}catch(Exception ex){Toast("导入失败，原进度保留："+ex.Message);}}
   void OnKey(object sender,KeyEventArgs e) {
    if(Keyboard.FocusedElement is TextBox || Keyboard.FocusedElement is ComboBox)return;
-   if(Keyboard.Modifiers==ModifierKeys.Control&&e.Key==Key.Z){Undo();e.Handled=true;return;}
+   if(Keyboard.Modifiers==ModifierKeys.Alt&&(e.Key==Key.System?e.SystemKey:e.Key)==Key.E){Undo();e.Handled=true;return;}
    if(view!="study"||Keyboard.Modifiers!=ModifierKeys.None)return;
    if(e.Key==Key.Space){Flip();e.Handled=true;}else if(e.Key==Key.R){Speak();e.Handled=true;}else if(e.Key==Key.F){ToggleStar();e.Handled=true;}
    else if(e.Key>=Key.D1&&e.Key<=Key.D4){Grade((int)e.Key-(int)Key.D1+1);e.Handled=true;}
    else if(e.Key>=Key.NumPad1&&e.Key<=Key.NumPad4){Grade((int)e.Key-(int)Key.NumPad1+1);e.Handled=true;}
   }
   void CreateTray() {
-   tray=new Forms.NotifyIcon {Text="小词窗 · Ctrl+Alt+J 唤出",Visible=true,Icon=System.Drawing.Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location)??System.Drawing.SystemIcons.Application};
+   tray=new Forms.NotifyIcon {Text="小词窗 · Alt+R 唤出",Visible=true,Icon=System.Drawing.Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location)??System.Drawing.SystemIcons.Application};
    var menu=new Forms.ContextMenuStrip();menu.Items.Add("显示小词窗",null,delegate {Dispatcher.Invoke(new Action(ShowWindow));});menu.Items.Add("退出",null,delegate {Dispatcher.Invoke(new Action(Close));});tray.ContextMenuStrip=menu;tray.DoubleClick+=delegate {Dispatcher.Invoke(new Action(ShowWindow));};
   }
   void ShowWindow(){if(closed)return;Show();WindowState=WindowState.Normal;Activate();AutoRead();}
