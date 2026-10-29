@@ -1,0 +1,14 @@
+build/
+voice-assets/
+release*/
+portable-data/
+**/portable-data/
+**/test-cache-*/
+backups/
+tmp/
+*.exe
+*.dll
+*.wav
+*.zip
+*.onnx
+.vs/

@@ -1,0 +1,1 @@
+using System.Reflection;[assembly: AssemblyTitle("小词窗")][assembly: AssemblyDescription("离线日语 N5–N1 词卡与间隔复习")][assembly: AssemblyProduct("小词窗")][assembly: AssemblyVersion("1.1.0.0")][assembly: AssemblyFileVersion("1.1.0.0")]
