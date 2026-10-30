@@ -1,10 +1,12 @@
 # 小词窗 · Kotoba Window
 
-Windows 桌面悬浮日语单词卡片。免安装、解压即用，适合在工作或学习间隙复习。
+Windows / Android 悬浮日语单词卡片，适合在工作或学习间隙复习。
 
 ## 下载与使用
 
-前往 [Releases](https://github.com/ziyie421-max/kotoba-window/releases/latest) 下载 **KotobaWindow-v1.1.1-Windows-x64.zip**，完整解压后运行 `小词窗/KotobaWindow.exe`。请保留同目录的 `voice` 文件夹。GitHub 的 Source code 下载仅含源码，不含语音模型。
+**Android：** [下载 v1.1.2 APK](https://github.com/ziyie421-max/kotoba-window/releases/tag/android-v1.1.2)，Android 8.0 及以上，内置离线语音。支持悬浮窗、多等级词库、随机学习及明暗主题。源码和构建说明见 [android/](android/README.md)。
+
+**Windows：** 前往 [Windows v1.1.1](https://github.com/ziyie421-max/kotoba-window/releases/tag/v1.1.1) 下载 **KotobaWindow-v1.1.1-Windows-x64.zip**，完整解压后运行 `小词窗/KotobaWindow.exe`。请保留同目录的 `voice` 文件夹。Windows 语音模型请从 Windows Release 完整版获取。
 
 运行环境：Windows 10/11 x64、.NET Framework 4.8。离线语音模型已包含在完整版中；无需联网、账号或 API Key。
 
@@ -45,7 +47,7 @@ build-voice.cmd
 
 主程序生成在 `build/KotobaWindow.exe`；`test.cmd` 运行 20 项核心测试和 23 项 UI 冒烟测试。VoiceHost 为独立 x64 程序，生成在 `voice-assets/voice/VoiceHost.exe`。
 
-离线语音资源不存放在 Git 历史中。将 Release 完整版的 `voice` 文件夹复制为 `build/voice`，然后用自己编译的 VoiceHost 替换其中的 `VoiceHost.exe` 即可。官方语音资源来源、组件版本与哈希见 [voice-manifest.json](docs/voice-manifest.json)。语音集成测试源文件为 `tests/VoiceServiceTests.cs`，需额外提供完整语音资源。
+Windows 离线语音资源请从 Release 获取。将 Release 完整版的 `voice` 文件夹复制为 `build/voice`，然后用自己编译的 VoiceHost 替换其中的 `VoiceHost.exe` 即可。官方语音资源来源、组件版本与哈希见 [voice-manifest.json](docs/voice-manifest.json)。语音集成测试源文件为 `tests/VoiceServiceTests.cs`，需额外提供完整语音资源。
 
 ## 目录
 

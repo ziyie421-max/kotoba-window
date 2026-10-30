@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Status bar silhouette: the card, drawn in one weight. -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M7,3.4 L17,3.4 Q19.2,3.4 19.2,5.6 L19.2,18.4 Q19.2,20.6 17,20.6 L7,20.6 Q4.8,20.6 4.8,18.4 L4.8,5.6 Q4.8,3.4 7,3.4"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.7" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M8.6,9.6 L15.4,9.6"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="1.7" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,15.2 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0" />
+</vector>

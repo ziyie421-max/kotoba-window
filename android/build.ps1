@@ -1,7 +1,8 @@
 param(
  [string]$ToolRoot = 'D:\CodexTools\android',
  [string]$JavaBin = 'C:\Program Files\bin',
- [string]$SigningDir = 'D:\CodexSigning\kotoba-android'
+ [string]$SigningDir = 'D:\CodexSigning\kotoba-android',
+ [string]$Version = '1.1.2'
 )
 $ErrorActionPreference = 'Stop'
 $env:PATHEXT = '.COM;.EXE;.BAT;.CMD'
@@ -32,7 +33,7 @@ foreach ($abi in @('arm64-v8a','x86_64')) {
 # jar uses portable '/' ZIP paths. aapt2 35 on Windows emits backslashes for nested -A assets.
 Native (Join-Path $JavaBin 'jar.exe') @('uf',"$root\build\base.apk",'-C',$root,'assets','-C',"$root\build\package",'.')
 Native (Join-Path $bt 'zipalign.exe') @('-P','16','-f','4',"$root\build\base.apk","$root\build\aligned.apk")
-$apk = "$root\release\KotobaWindow-Android-v1.0.0.apk"
+$apk = "$root\release\KotobaWindow-Android-v$Version.apk"
 Native (Join-Path $JavaBin 'java.exe') @('-jar',"$bt\lib\apksigner.jar",'sign','--ks',"$SigningDir\release.jks",'--ks-pass',"file:$SigningDir\password.txt",'--out',$apk,"$root\build\aligned.apk")
 Native (Join-Path $JavaBin 'java.exe') @('-jar',"$bt\lib\apksigner.jar",'verify','--verbose',$apk)
 Get-FileHash -LiteralPath $apk -Algorithm SHA256
