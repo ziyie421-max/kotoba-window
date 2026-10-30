@@ -1,0 +1,33 @@
+package com.kotoba.window;
+import android.content.*;import android.graphics.Color;import android.graphics.Typeface;import android.graphics.drawable.GradientDrawable;import android.view.*;import android.widget.*;import org.json.*;import java.util.*;
+final class StudyView extends LinearLayout {
+ final Store store;final boolean floating;JSONObject word,undo;String undoId;boolean revealed,practice,active=true;Runnable pendingSpeech;TextView status;int ink,muted,bg;Runnable tick;
+ StudyView(Context c,boolean f){super(c);floating=f;store=Store.get(c);setOrientation(VERTICAL);setPadding(dp(14),dp(10),dp(14),dp(10));next();tick=()->{if(word==null)next();postDelayed(tick,15000);};postDelayed(tick,15000);}
+ int dp(float n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
+ GradientDrawable shape(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
+ boolean dark(){return !"Light".equals(store.settings().optString("Theme"));}
+ boolean quiet(){return floating&&store.settings().optBoolean("Transparent");}
+ TextView text(String s,int size,int color){TextView t=new TextView(getContext());t.setText(s);t.setTextSize(size);t.setTextColor(color);t.setGravity(Gravity.CENTER);t.setPadding(dp(3),dp(8),dp(3),dp(8));return t;}
+ Button button(String s,Runnable action,boolean primary){Button b=new Button(getContext());b.setText(s);b.setTextSize(13);b.setAllCaps(false);b.setTextColor(primary&&!quiet()?Color.WHITE:ink);b.setMinHeight(dp(44));b.setMinimumHeight(dp(44));b.setPadding(dp(6),0,dp(6),0);int base=primary?Color.rgb(133,114,231):(dark()?0xff293040:0xffeae8f6);if(quiet())base=(base&0xffffff)|0x18000000;b.setBackground(shape(base,12));b.setOnClickListener(v->action.run());if(quiet()){b.setAlpha(.6f);b.setOnTouchListener((v,e)->{b.setAlpha(e.getAction()==MotionEvent.ACTION_DOWN?1f:.6f);return false;});}return b;}
+ void addButton(LinearLayout row,Button b){LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(52),1);lp.setMargins(dp(3),dp(3),dp(3),dp(3));row.addView(b,lp);}
+ void next(){Voice.get(getContext()).stop();ArrayList<JSONObject> q=store.queue();word=q.isEmpty()?null:q.get(0);revealed=false;practice=false;render();if(word!=null&&store.settings().optBoolean("AutoSpeak",true)){if(pendingSpeech!=null)removeCallbacks(pendingSpeech);pendingSpeech=()->{android.os.PowerManager pm=(android.os.PowerManager)getContext().getSystemService(Context.POWER_SERVICE);if(active&&isShown()&&pm.isInteractive())speak();};postDelayed(pendingSpeech,350);}}
+ void speak(){if(active&&word!=null)Voice.get(getContext()).speak(word.optString("Reading",word.optString("Term")),word.optString("Id"),s->{if(isAttachedToWindow()&&status!=null)status.setText(s);});}
+ void render(){removeAllViews();ink=dark()?0xffedf1ff:0xff263247;muted=dark()?0xffadb5cd:0xff677286;bg=dark()?0xff171b25:0xfff5f5fc;int a=quiet()?(int)(Math.max(.2,store.settings().optDouble("BackgroundOpacity",.8))*255):255;setBackground(shape((bg&0xffffff)|(a<<24),18));
+ String ls="";for(int l=5;l>=1;l--)if(store.includes(l))ls+=(ls.isEmpty()?"":" + ")+"N"+l;
+ TextView meta=text(ls+"  ·  今日 "+store.count("DailyReviews")+" 次  ·  待复习 "+store.due(),11,muted);addView(meta);
+ ScrollView scroll=new ScrollView(getContext());LinearLayout card=new LinearLayout(getContext());card.setOrientation(VERTICAL);card.setGravity(Gravity.CENTER);scroll.setFillViewport(true);scroll.addView(card);addView(scroll,new LayoutParams(-1,0,1));
+ JSONObject r=store.progress(word);card.addView(text(word==null?"这一轮完成了":practice?"自由查看 · 不计复习":r==null||r.optInt("Reviews")==0?"NEW WORD / 新词":"REVIEW / 复习",11,0xffa99af8));
+ TextView term=text(word==null?"休息一下":word.optString("Term"),floating?34:46,ink);term.setTypeface(null,Typeface.BOLD);card.addView(term);
+ if(word!=null){if(revealed||store.settings().optBoolean("ShowReading",true))card.addView(text(word.optString("Reading"),19,muted));card.addView(text(revealed?word.optString("Meaning"):"先在心里回忆它的意思",17,revealed?ink:muted));if(revealed){card.addView(text(word.optString("Note"),12,muted));if(!word.optString("Example").isEmpty()){TextView ex=text("例句与翻译 ▾",12,muted);card.addView(ex);ex.setOnClickListener(v->{ex.setText(word.optString("Example")+"\n"+word.optString("ExampleMeaning"));});}}}else card.addView(text("到期后会自动出现复习卡。\n可在设置里调整每日新词额度。",14,muted));
+ LinearLayout actions=new LinearLayout(getContext());addButton(actions,button("听发音",()->speak(),false));Button fav=button(r!=null&&r.optBoolean("Star")?"★ 已收藏":"☆ 收藏",()->favorite(),false);fav.setEnabled(word!=null);addButton(actions,fav);addView(actions);
+ Button flip=button(word==null?"刷新":practice?"回到复习":revealed?"请选择记忆程度":"显示答案",()->{if(word==null||practice)next();else{revealed=true;render();}},!revealed);flip.setEnabled(!revealed||practice||word==null);addView(flip,new LayoutParams(-1,dp(46)));
+ LinearLayout ratings=new LinearLayout(getContext());String[] labels={"忘记","困难","记得","轻松"};for(int i=1;i<=4;i++){final int score=i;Button b=button(labels[i-1]+"\n"+Store.preview(r,i),()->grade(score),false);b.setTextSize(11);b.setEnabled(revealed&&!practice&&word!=null);addButton(ratings,b);}addView(ratings);
+ Button ub=button("↶ 撤销上一次评分",()->undo(),false);ub.setEnabled(undo!=null);addView(ub,new LayoutParams(-1,dp(40)));
+ status=text(store.warning.isEmpty()?"离线词库 · Supertonic 神经语音":store.warning,10,muted);addView(status);}
+ JSONObject cloneData(){try{return new JSONObject(store.data.toString());}catch(Exception e){throw new RuntimeException(e);}}
+ void grade(int g){if(word==null||!revealed||practice)return;JSONObject before=cloneData();store.grade(word,g);if(store.save()){undo=before;undoId=word.optString("Id");next();}else{store.data=before;render();}}
+ void undo(){if(undo==null)return;JSONObject before=store.data;Store.put(undo,"Settings",before.optJSONObject("Settings"));store.data=undo;if(!store.save()){store.data=before;return;}word=null;for(JSONObject w:store.words)if(w.optString("Id").equals(undoId)){word=w;break;}undo=null;revealed=true;practice=false;Voice.get(getContext()).stop();render();}
+ void favorite(){if(word==null)return;JSONObject before=cloneData(),r=store.progress(word);if(r==null){r=new JSONObject();Store.put(r,"Id",word.optString("Id"));Store.put(store.progress(),word.optString("Id"),r);}Store.put(r,"Star",!r.optBoolean("Star"));if(!store.save())store.data=before;undo=null;render();}
+ void showWord(JSONObject w){Voice.get(getContext()).stop();word=w;practice=true;revealed=true;render();if(store.settings().optBoolean("AutoSpeak",true))speak();}
+ @Override protected void onDetachedFromWindow(){active=false;if(pendingSpeech!=null)removeCallbacks(pendingSpeech);removeCallbacks(tick);super.onDetachedFromWindow();}
+}
